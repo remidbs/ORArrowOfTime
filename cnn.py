@@ -4,13 +4,22 @@ from scipy.misc import imread
 import sys
 import os
 
+
+
 def get_training_images():
     
     x = []
     y = []
 
     video_paths = os.listdir("Samples_resized/")
+
+    #i=0
     for video_path in video_paths:
+
+        # i+=1
+        # if i>10:
+        #     break
+
         if(video_path == ".DS_Store"):
             continue
 
@@ -256,6 +265,7 @@ def main(_):
     
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
+
     # Train
     x_in, y_in = get_training_images()
     sess.run(train_step, feed_dict={x: x_in, y_: y_in})
