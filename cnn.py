@@ -2,17 +2,42 @@ import tensorflow as tf
 import numpy as np
 from scipy.misc import imread
 import sys
+import os
 
 def get_training_images():
-    img11 = imread("img/img11.png")[:,:,:3].reshape((227,227,3,1))
-    img12 = imread("img/img12.png")[:,:,:3].reshape((227,227,3,1))
-    img13 = imread("img/img13.png")[:,:,:3].reshape((227,227,3,1))
-    img_true = np.concatenate([img11,img12,img13], axis=3)
-    img_false1 = np.concatenate([img11,img13,img12], axis=3)
-    img_false2 = np.concatenate([img11,img13,img12], axis=3)
-    x = np.array([img_true,img_false1,img_false2])
-    y = np.array([[1,0],[0,1],[0,1]])
-    return x,y
+    
+    x = []
+    y = []
+
+    i=0
+    video_paths = os.listdir("Samples_resized/")
+    for video_path in video_paths:
+        if(video_path == ".DS_Store"):
+            continue
+
+        a = imread("Samples_resized/"+video_path+"/a.png")[:,:,:3].reshape((227,227,3,1))
+        b = imread("Samples_resized/"+video_path+"/b.png")[:,:,:3].reshape((227, 227, 3, 1))
+        c = imread("Samples_resized/"+video_path+"/c.png")[:,:,:3].reshape((227, 227, 3, 1))
+        d = imread("Samples_resized/"+video_path+"/d.png")[:, :,:3].reshape((227, 227, 3, 1))
+        e = imread("Samples_resized/"+video_path+"/e.png")[:, :, :3].reshape((227, 227, 3, 1))
+
+        #True tuples
+        x.append(np.concatenate([b, c, d], axis=3))
+        y.append([1, 0])
+        x.append(np.concatenate([d, c, b], axis=3))
+        y.append([1, 0])
+
+        #False tuples
+        x.append(np.concatenate([b, a, d], axis=3))
+        y.append([0, 1])
+        x.append(np.concatenate([d, a, b], axis=3))
+        y.append([0, 1])
+        x.append(np.concatenate([b, e, d], axis=3))
+        y.append([0, 1])
+        x.append(np.concatenate([d, e, b], axis=3))
+        y.append([0, 1])
+
+    return np.asarray(x),np.asarray(y)
     
 
 
@@ -27,7 +52,7 @@ def conv(input, kernel, biases, k_h, k_w, c_o, s_h, s_w,  padding="VALID", group
     
     if group==1:
         conv = convolve(input, kernel)
-    else:impo
+    else:
         input_groups = tf.split(3, group, input)
         kernel_groups = tf.split(3, group, kernel)
         output_groups = [convolve(i, k) for i,k in zip(input_groups, kernel_groups)]
