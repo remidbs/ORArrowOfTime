@@ -1,2 +1,4 @@
 .DS_store
 dataset/
+dataset_full/
+dataset_sample/
