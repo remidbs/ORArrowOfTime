@@ -9,7 +9,6 @@ def get_training_images():
     x = []
     y = []
 
-    i=0
     video_paths = os.listdir("Samples_resized/")
     for video_path in video_paths:
         if(video_path == ".DS_Store"):
