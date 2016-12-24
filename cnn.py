@@ -17,6 +17,7 @@ def get_training_images():
         if(video_path == ".DS_Store"):
             continue
 
+
         a = imread("Samples_resized/"+video_path+"/a.png")[:,:,:3].reshape((227,227,3,1))
         b = imread("Samples_resized/"+video_path+"/b.png")[:,:,:3].reshape((227, 227, 3, 1))
         c = imread("Samples_resized/"+video_path+"/c.png")[:,:,:3].reshape((227, 227, 3, 1))
