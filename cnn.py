@@ -5,7 +5,6 @@ import sys
 import os
 
 
-
 def get_training_images():
     
     x = []
@@ -13,12 +12,7 @@ def get_training_images():
 
     video_paths = os.listdir("Samples_resized/")
 
-    #i=0
     for video_path in video_paths:
-
-        # i+=1
-        # if i>10:
-        #     break
 
         if(video_path == ".DS_Store"):
             continue
@@ -45,7 +39,7 @@ def get_training_images():
         x.append(np.concatenate([d, e, b], axis=3))
         y.append([0, 1])
 
-    return np.asarray(x),np.asarray(y)
+    return np.asarray(x), np.asarray(y)
     
 
 
@@ -267,10 +261,14 @@ def main(_):
     sess.run(tf.global_variables_initializer())
 
     # Train
+    print "Building training images..."
     x_in, y_in = get_training_images()
+
+    print "Training neural network..."
     sess.run(train_step, feed_dict={x: x_in, y_: y_in})
     
     # Test trained model
+    print "Testing neural network..."
     correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     print(sess.run(accuracy, feed_dict={x: x_in,
