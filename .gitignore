@@ -2,3 +2,8 @@
 dataset/
 dataset_full/
 dataset_sample/
+Samples_resized/
+*.index
+*.meta
+*.data*
+bvlc_alexnet.npy
