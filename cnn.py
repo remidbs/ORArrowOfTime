@@ -246,9 +246,9 @@ fc7  = tf.concat(1, [fc71,fc72,fc73])
 #fc8 = tf.nn.xw_plus_b(fc7, fc8W, fc8b)
 
 #fc8
-initial1 = tf.truncated_normal([fc7.get_shape()[1].value, 10], stddev=0.1)
+initial1 = tf.truncated_normal([fc7.get_shape()[1].value, 5], stddev=0.1)
 Wfc8 = tf.Variable(initial1)
-initial2 = tf.constant(0.1, shape=[10])
+initial2 = tf.constant(0.1, shape=[5])
 bfc8 = tf.Variable(initial2)
 fc8 = tf.matmul(fc7, Wfc8) + bfc8
 
@@ -288,17 +288,17 @@ def persist(filepath, sess):
     saver = tf.train.Saver()
     saver.save(sess, filepath)
 
-mode="infer"
+mode="restore"
 
 x_in, y_in = get_training_images(np.inf)
 if(mode == "train"):
     sess = tf.InteractiveSession()
     train(sess, x_in, y_in)
-    persist("model-28-12",sess)
+    persist("model-30-12",sess)
 else:
     sess = tf.InteractiveSession()
     sess.run(tf.initialize_all_variables())
-    new_saver = tf.train.import_meta_graph('model-28-12.meta')
+    new_saver = tf.train.import_meta_graph('model-30-12.meta')
     new_saver.restore(sess, tf.train.latest_checkpoint('./'))
     all_vars = tf.trainable_variables()
     for v in all_vars:
@@ -307,6 +307,6 @@ else:
     DF = pd.DataFrame(np.concatenate([np.concatenate([pred[i*6+j,:] for j in range(6)]) for i in range(pred.shape[0]/6)]))    
     DF["name"] = os.listdir("Samples_resized/")[1:]
     DF["label"] = DF.name.apply(lambda x : x[0] == 'F')
-    DF.to_csv("features.csv", index=None, header=None)
+    DF.to_csv("features/features30-12.csv", index=None, header=None)
         
     
