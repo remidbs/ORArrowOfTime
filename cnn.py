@@ -304,7 +304,7 @@ else:
     for v in all_vars:
         print(v.name)
     pred = sess.run(fc8, feed_dict={x: x_in})
-    DF = pd.DataFrame(np.concatenate([np.concatenate([pred[i*6+j,:] for j in range(6)]) for i in range(pred.shape[0]/6)]))    
+    DF = pd.DataFrame(np.concatenate([np.concatenate([pred[i*6+j,:] for j in range(6)])[np.newaxis,:] for i in range(pred.shape[0]/6)], axis=0))    
     DF["name"] = os.listdir("Samples_resized/")[1:]
     DF["label"] = DF.name.apply(lambda x : x[0] == 'F')
     DF.to_csv("features/features30-12.csv", index=None, header=None)
