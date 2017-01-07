@@ -6,25 +6,23 @@ import os
 import pandas as pd
 
 
-def get_training_images(nb_training_examples):
+def get_training_images(nb_training_examples, folder):
     x = []
     y = []
-
-    video_paths = os.listdir("Samples_resized/")
-    it = 0
+    
+    video_paths = os.listdir(folder)
+    if folder=="Samples_resized/":
+        video_paths= video_paths[1:]
+    video_paths = np.random.permutation(video_paths)[:nb_training_examples]
     for video_path in video_paths:
         if(video_path == ".DS_Store"):
             continue
-        it += 1
-        if(it > nb_training_examples):
-            break
 
-
-        a = imread("Samples_resized/"+video_path+"/a.png")[:,:,:3].reshape((227,227,3,1))
-        b = imread("Samples_resized/"+video_path+"/b.png")[:,:,:3].reshape((227, 227, 3, 1))
-        c = imread("Samples_resized/"+video_path+"/c.png")[:,:,:3].reshape((227, 227, 3, 1))
-        d = imread("Samples_resized/"+video_path+"/d.png")[:, :,:3].reshape((227, 227, 3, 1))
-        e = imread("Samples_resized/"+video_path+"/e.png")[:, :, :3].reshape((227, 227, 3, 1))
+        a = imread(folder+video_path+"/a.png")[:,:,:3].reshape((227, 227, 3, 1))
+        b = imread(folder+video_path+"/b.png")[:,:,:3].reshape((227, 227, 3, 1))
+        c = imread(folder+video_path+"/c.png")[:,:,:3].reshape((227, 227, 3, 1))
+        d = imread(folder+video_path+"/d.png")[:,:,:3].reshape((227, 227, 3, 1))
+        e = imread(folder+video_path+"/e.png")[:,:,:3].reshape((227, 227, 3, 1))
 
         #True tuples
         x.append(np.concatenate([b, c, d], axis=3))
@@ -42,7 +40,7 @@ def get_training_images(nb_training_examples):
         x.append(np.concatenate([d, e, b], axis=3))
         y.append([0, 1])
 
-    return np.asarray(x), np.asarray(y)
+    return video_paths, np.asarray(x), np.asarray(y)
     
 
 
@@ -288,14 +286,15 @@ def persist(filepath, sess):
     saver = tf.train.Saver()
     saver.save(sess, filepath)
 
-mode="restore"
+mode="generate_features"
 
-x_in, y_in = get_training_images(np.inf)
 if(mode == "train"):
+    _, x_in, y_in = get_training_images(np.inf, "Samples_resized/")
     sess = tf.InteractiveSession()
     train(sess, x_in, y_in)
     persist("model-30-12",sess)
-else:
+elif(mode == "restore"):
+    _, x_in, y_in = get_training_images(np.inf, "Samples_resized/")
     sess = tf.InteractiveSession()
     sess.run(tf.initialize_all_variables())
     new_saver = tf.train.import_meta_graph('model-30-12.meta')
@@ -308,5 +307,16 @@ else:
     DF["name"] = os.listdir("Samples_resized/")[1:]
     DF["label"] = DF.name.apply(lambda x : x[0] == 'F')
     DF.to_csv("features/features30-12.csv", index=None, header=None)
-        
+elif(mode=="generate_features"):
+    _, x_in, y_in = get_training_images(100, "samples/")
+    video_paths, x_in_test, y_in_test = get_training_images(100, "Samples_resized/")
+    sess = tf.InteractiveSession()
+    train(sess, x_in, y_in)
+    pred = sess.run(fc8, feed_dict={x: x_in_test})
+    DF = pd.DataFrame(np.concatenate([np.concatenate([pred[i*6+j,:] for j in range(6)])[np.newaxis,:] for i in range(pred.shape[0]/6)], axis=0))    
+    DF["name"] = video_paths
+    DF["label"] = DF.name.apply(lambda x : x[0] == 'F')
+    DF.to_csv("features/features7-1_ucf100.csv", index=None, header=None)
+  
     
+os.listdir("samples/")
