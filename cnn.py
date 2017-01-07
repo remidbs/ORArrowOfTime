@@ -317,6 +317,5 @@ elif(mode=="generate_features"):
     DF["name"] = video_paths
     DF["label"] = DF.name.apply(lambda x : x[0] == 'F')
     DF.to_csv("features/features7-1_ucf100.csv", index=None, header=None)
-  
-    
-os.listdir("samples/")
+
+
