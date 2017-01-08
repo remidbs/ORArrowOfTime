@@ -4,16 +4,21 @@ from scipy.misc import imread
 import sys
 import os
 import pandas as pd
+import time
 
 
-def get_training_images(nb_training_examples, folder):
+def get_training_images(folder, nb_training_examples=-1, batch_size=-1, batch_num=-1):
     x = []
     y = []
     
     video_paths = os.listdir(folder)
     if folder=="Samples_resized/":
         video_paths= video_paths[1:]
-    video_paths = np.random.permutation(video_paths)[:nb_training_examples]
+    if batch_size==-1:
+        video_paths = np.random.permutation(video_paths)[:nb_training_examples]
+    else :
+        video_paths = video_paths[batch_num*batch_size:(batch_num+1)*batch_size]
+
     for video_path in video_paths:
         if(video_path == ".DS_Store"):
             continue
@@ -280,21 +285,59 @@ def train(sess, x_in, y_in):
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     print(sess.run(accuracy, feed_dict={x: x_in,
                                           y_: y_in}))
-    
+
+def train_ucf(sess):
+
+        # Define loss and optimizer
+        y_ = tf.placeholder(tf.float32, [None, 2])
+        cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
+        train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+
+        # Define accuracy test
+        correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        sess.run(tf.initialize_all_variables())
+
+
+
+        # Train
+        batch_size = 10
+        n_batches = len(os.listdir("samples/")) / batch_size
+
+        t0 = time.clock()
+        for batch_num in range(n_batches):
+            _, x_in, y_in = get_training_images("samples/", batch_size=batch_size, batch_num=batch_num)
+            sess.run(train_step, feed_dict={x: x_in,y_: y_in})
+
+            if batch_num%10==0:
+                print "batch",batch_num,"/",n_batches,\
+                    " -  elapsed time:",time.clock()-t0,\
+                    "s - accuracy",sess.run(accuracy, feed_dict={x: x_in,y_: y_in})
+
+
+
+
+
+
 
 def persist(filepath, sess):
     saver = tf.train.Saver()
     saver.save(sess, filepath)
 
-mode="generate_features"
+mode="train_ucf"
+
+if(mode == "train_ucf"):
+    sess = tf.InteractiveSession()
+    train_ucf(sess)
+    persist("model-ucf-full",sess)
 
 if(mode == "train"):
-    _, x_in, y_in = get_training_images(np.inf, "Samples_resized/")
+    _, x_in, y_in = get_training_images("Samples_resized/",nb_training_examples=np.inf)
     sess = tf.InteractiveSession()
     train(sess, x_in, y_in)
     persist("model-30-12",sess)
 elif(mode == "restore"):
-    _, x_in, y_in = get_training_images(np.inf, "Samples_resized/")
+    _, x_in, y_in = get_training_images("Samples_resized/", nb_training_examples=np.inf)
     sess = tf.InteractiveSession()
     sess.run(tf.initialize_all_variables())
     new_saver = tf.train.import_meta_graph('model-30-12.meta')
@@ -308,8 +351,8 @@ elif(mode == "restore"):
     DF["label"] = DF.name.apply(lambda x : x[0] == 'F')
     DF.to_csv("features/features30-12.csv", index=None, header=None)
 elif(mode=="generate_features"):
-    _, x_in, y_in = get_training_images(100, "samples/")
-    video_paths, x_in_test, y_in_test = get_training_images(100, "Samples_resized/")
+    _, x_in, y_in = get_training_images("samples/", nb_training_examples=100)
+    video_paths, x_in_test, y_in_test = get_training_images("Samples_resized/", nb_training_examples=100)
     sess = tf.InteractiveSession()
     train(sess, x_in, y_in)
     pred = sess.run(fc8, feed_dict={x: x_in_test})
