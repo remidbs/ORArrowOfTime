@@ -8,4 +8,5 @@ Samples_resized/
 *.data*
 bvlc_alexnet.npy
 samples/
+samples_short/
 samples_ucf.zip

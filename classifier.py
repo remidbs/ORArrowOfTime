@@ -3,7 +3,7 @@ import numpy as np
 from sklearn import svm
 from sklearn.model_selection import cross_val_score, train_test_split
 
-DF = pd.read_csv("features/features30-12.csv", index_col=None, header=None)
+DF = pd.read_csv("features/features8-1_onlylast.csv", index_col=None, header=None)
 DF = DF.rename(columns={len(DF.columns)-1 : "label",len(DF.columns)-2:"name"})
 
 DF_forward = DF[DF.label]
@@ -37,7 +37,24 @@ for C in [0.01,0.1,1.0,10.0,100.0,1000.0,10000.0]:
         print np.mean(1-np.abs(pred-y_test))
     
 
+#%% 
+from sklearn.ensemble import RandomForestClassifier as RF
 
+classifier = RF(30,max_features=0.2, min_samples_leaf=10)
+classifier.fit(DF.drop(["name","label"], axis=1), DF.label)
+pred = classifier.predict(DF.drop(["name","label"], axis=1))
+np.max(classifier.feature_importances_)
+print np.mean(1-np.abs(pred-DF.label))
 n_splits = 4
 scores = cross_val_score(classifier, DF.drop(["name","label"], axis=1), DF.label, cv=4)
 print "Average prediction score for ",n_splits," splits : ",np.mean(scores)
+
+from matplotlib import pyplot as plt
+import seaborn as sb
+DF1 = DF[DF.label==True]
+DF2 = DF[DF.label==False]
+ft1 = 2
+ft2 = 3
+plt.scatter(DF1[ft1],DF1[ft2], color="r")
+plt.scatter(DF2[ft1],DF2[ft2], color="g")
+

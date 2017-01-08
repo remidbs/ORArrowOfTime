@@ -13,7 +13,7 @@ def get_training_images(folder, nb_training_examples=-1, batch_size=-1, batch_nu
     
     video_paths = os.listdir(folder)
     if folder=="Samples_resized/":
-        video_paths= video_paths[1:]
+        video_paths = video_paths[1:]
     if batch_size==-1:
         video_paths = np.random.permutation(video_paths)[:nb_training_examples]
     else :
@@ -286,12 +286,15 @@ def train(sess, x_in, y_in):
     print(sess.run(accuracy, feed_dict={x: x_in,
                                           y_: y_in}))
 
-def train_ucf(sess):
+def train_ucf(sess, only_fc8=False):
 
         # Define loss and optimizer
         y_ = tf.placeholder(tf.float32, [None, 2])
         cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
-        train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+        if(only_fc8):
+            train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy, var_list=[Wfc8,bfc8,W,b])
+        else:
+            train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
         # Define accuracy test
         correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
@@ -302,11 +305,11 @@ def train_ucf(sess):
 
         # Train
         batch_size = 10
-        n_batches = len(os.listdir("samples/")) / batch_size
+        n_batches = len(os.listdir("samples_short/")) / batch_size
 
         t0 = time.clock()
         for batch_num in range(n_batches):
-            _, x_in, y_in = get_training_images("samples/", batch_size=batch_size, batch_num=batch_num)
+            _, x_in, y_in = get_training_images("samples_short/", batch_size=batch_size, batch_num=batch_num)
             sess.run(train_step, feed_dict={x: x_in,y_: y_in})
 
             if batch_num%10==0:
@@ -314,7 +317,17 @@ def train_ucf(sess):
                     " -  elapsed time:",time.clock()-t0,\
                     "s - accuracy",sess.run(accuracy, feed_dict={x: x_in,y_: y_in})
 
-
+def predict_1_with_batch(sess):
+    batch_size = 10
+    n_batches = len(os.listdir("Samples_resized/")) / batch_size
+    pred = np.empty((0,fc8.get_shape()[1].value))
+    video_paths = []
+    for batch_num in range(n_batches):
+        video_paths_batch, x_in, _ = get_training_images("Samples_resized/", batch_size=batch_size, batch_num=batch_num)
+        pred = np.concatenate([pred,sess.run(fc8, feed_dict={x: x_in})],axis=0)
+        video_paths += video_paths_batch
+    return video_paths, pred
+   
 
 
 
@@ -328,8 +341,13 @@ mode="train_ucf"
 
 if(mode == "train_ucf"):
     sess = tf.InteractiveSession()
-    train_ucf(sess)
-    persist("model-ucf-full",sess)
+    train_ucf(sess, only_fc8=True)
+    #persist("model-ucf-full",sess)
+    video_paths, pred = predict_1_with_batch(sess)
+    DF = pd.DataFrame(np.concatenate([np.concatenate([pred[i*6+j,:] for j in range(6)])[np.newaxis,:] for i in range(pred.shape[0]/6)], axis=0))    
+    DF["name"] = video_paths
+    DF["label"] = DF.name.apply(lambda x : x[0] == 'F')
+    DF.to_csv("features/features8-1_onlylast.csv", index=None, header=None)
 
 if(mode == "train"):
     _, x_in, y_in = get_training_images("Samples_resized/",nb_training_examples=np.inf)
