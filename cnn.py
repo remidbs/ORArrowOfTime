@@ -286,15 +286,15 @@ def train(sess, x_in, y_in):
     print(sess.run(accuracy, feed_dict={x: x_in,
                                           y_: y_in}))
 
-def train_ucf(sess, only_fc8=False):
+def train_ucf(sess, only_fc8=False, learning_rate=1e-4):
 
         # Define loss and optimizer
         y_ = tf.placeholder(tf.float32, [None, 2])
         cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
         if(only_fc8):
-            train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy, var_list=[Wfc8,bfc8,W,b])
+            train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy, var_list=[Wfc8,bfc8,W,b])
         else:
-            train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+            train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)
 
         # Define accuracy test
         correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
@@ -341,7 +341,7 @@ mode="train_ucf"
 
 if(mode == "train_ucf"):
     sess = tf.InteractiveSession()
-    train_ucf(sess, only_fc8=True)
+    train_ucf(sess, only_fc8=True, learning_rate=1e-3)
     #persist("model-ucf-full",sess)
     video_paths, pred = predict_1_with_batch(sess)
     DF = pd.DataFrame(np.concatenate([np.concatenate([pred[i*6+j,:] for j in range(6)])[np.newaxis,:] for i in range(pred.shape[0]/6)], axis=0))    
