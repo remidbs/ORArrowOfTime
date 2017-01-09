@@ -3,7 +3,7 @@ import numpy as np
 from sklearn import svm
 from sklearn.model_selection import cross_val_score, train_test_split
 
-DF = pd.read_csv("features/features9-1_onlylast_fc8_20.csv", index_col=None, header=None)
+DF = pd.read_csv("features/features9-1_all_fc8_20.csv", index_col=None, header=None)
 DF = DF.rename(columns={len(DF.columns)-1 : "label",len(DF.columns)-2:"name"})
 
 DF_forward = DF[DF.label]
@@ -40,7 +40,7 @@ for C in [0.01,0.1,1.0,10.0,100.0,1000.0,10000.0]:
 #%% 
 from sklearn.ensemble import RandomForestClassifier as RF
 
-classifier = RF(30,max_features=0.2, min_samples_leaf=20)
+classifier = RF(30,max_features=0.1, min_samples_leaf=20)
 classifier.fit(DF.drop(["name","label"], axis=1), DF.label)
 pred = classifier.predict(DF.drop(["name","label"], axis=1))
 np.max(classifier.feature_importances_)
